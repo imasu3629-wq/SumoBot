@@ -20,12 +20,12 @@ object HitSelector {
     @net.minecraftforge.fml.common.eventhandler.SubscribeEvent
     fun onLivingHurt(event: net.minecraftforge.event.entity.living.LivingHurtEvent) {
         if (event.entityLiving == DuckDueller.mc.thePlayer) {
-            onDamageTaken(DuckDueller.bot?.opponent)
+            onDamageTaken(DuckDueller.bot?.opponent())
         }
     }
 
     fun onDamageTaken(target: EntityPlayer?) {
-        val config = DuckDueller.Companion.getConfig() ?: return
+        val config = DuckDueller.config ?: return
         if (!config.hitSelectEnabled) return
 
         val player = DuckDueller.mc.thePlayer ?: return

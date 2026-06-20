@@ -10,14 +10,14 @@ object RingPositioning {
 
     fun calculateSafeStrafeVector(player: EntityPlayer, target: EntityPlayer): IntArray {
         val movePriority = intArrayOf(0, 0) // [left, right]
-        val config = DuckDueller.Companion.getConfig() ?: return movePriority
+        val config = DuckDueller.config ?: return movePriority
 
         val leftEdge = WorldUtils.distanceToLeftEdge(player)
         val rightEdge = WorldUtils.distanceToRightEdge(player)
         val airFront = WorldUtils.airInFront(player, config.edgeThreshold.toFloat())
         val airBack = WorldUtils.airInBack(player, config.edgeThreshold.toFloat())
 
-        val intensity = config.strafeIntensity
+        val intensity = config.strafeIntensity.toInt()
 
         if (leftEdge < config.edgeThreshold) {
             movePriority[1] += intensity // 右へ
@@ -37,7 +37,7 @@ object RingPositioning {
     }
 
     fun shouldDiagonalStrafe(player: EntityPlayer, target: EntityPlayer): Boolean {
-        val config = DuckDueller.Companion.getConfig() ?: return false
+        val config = DuckDueller.config ?: return false
         if (!config.diagonalStrafeEnabled) return false
 
         val dist = EntityUtils.getDistanceNoY(player, target)

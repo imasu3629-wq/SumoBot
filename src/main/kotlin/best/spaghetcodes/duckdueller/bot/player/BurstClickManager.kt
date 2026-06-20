@@ -11,7 +11,7 @@ object BurstClickManager {
     fun shouldAttack(target: EntityPlayer?): Boolean {
         if (target == null) return false
         val mc = DuckDueller.mc
-        val config = DuckDueller.Companion.getConfig() ?: return false
+        val config = DuckDueller.config ?: return false
         
         if (mc.thePlayer.getDistanceToEntity(target) > config.maxDistanceAttack) {
             return false
@@ -34,7 +34,7 @@ object BurstClickManager {
     }
 
     fun onTick(target: EntityPlayer?) {
-        val config = DuckDueller.Companion.getConfig() ?: return
+        val config = DuckDueller.config ?: return
         if (!config.burstClickEnabled) return
         
         if (shouldAttack(target)) {

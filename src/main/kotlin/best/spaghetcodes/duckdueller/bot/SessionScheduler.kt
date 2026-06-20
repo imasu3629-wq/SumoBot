@@ -16,7 +16,7 @@ object SessionScheduler {
     var restEndTime: Long = 0
 
     fun start() {
-        val config = DuckDueller.Companion.getConfig() ?: return
+        val config = DuckDueller.config ?: return
         if (config.sessionEnabled) {
             currentState = State.PLAYING
             val playTime = generatePlayTime(config.sessionPlayMin, config.sessionPlayMax)
@@ -33,7 +33,7 @@ object SessionScheduler {
     fun onClientTick(event: TickEvent.ClientTickEvent) {
         if (event.phase != TickEvent.Phase.END) return
         
-        val config = DuckDueller.Companion.getConfig() ?: return
+        val config = DuckDueller.config ?: return
         if (!config.sessionEnabled) return
 
         val mc = DuckDueller.mc
