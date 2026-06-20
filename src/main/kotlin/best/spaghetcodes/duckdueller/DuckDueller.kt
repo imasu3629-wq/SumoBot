@@ -50,6 +50,8 @@ class DuckDueller {
 
         MinecraftForge.EVENT_BUS.register(PacketListener())
         MinecraftForge.EVENT_BUS.register(StateManager)
+        MinecraftForge.EVENT_BUS.register(best.spaghetcodes.duckdueller.bot.player.HitSelector)
+        MinecraftForge.EVENT_BUS.register(best.spaghetcodes.duckdueller.bot.SessionScheduler)
         MinecraftForge.EVENT_BUS.register(Mouse)
         MinecraftForge.EVENT_BUS.register(LobbyMovement)
         MinecraftForge.EVENT_BUS.register(KeyBindings)

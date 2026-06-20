@@ -162,6 +162,130 @@ class Config : Vigilant(File(DuckDueller.configLocation), sortingBehavior = Conf
     val maxDistanceAttack = 5
 
     /*
+        Sumo / Logic
+     */
+
+    @Property(
+        type = PropertyType.SLIDER,
+        name = "W-Tap Frequency",
+        description = "Probability of W-Tapping during combat (0-100%)",
+        category = "Sumo Logic",
+        min = 0,
+        max = 100
+    )
+    var wTapFrequency = 80
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Hit Select",
+        description = "Delay attacks when taking damage in the air to maximize knockback",
+        category = "Sumo Logic"
+    )
+    var hitSelectEnabled = true
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Burst Click",
+        description = "Only click when target hurt resistant time ends to preserve momentum",
+        category = "Sumo Logic"
+    )
+    var burstClickEnabled = true
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Diagonal Strafe",
+        description = "Strafe diagonally when approaching the opponent",
+        category = "Sumo Logic"
+    )
+    var diagonalStrafeEnabled = true
+
+    @Property(
+        type = PropertyType.SLIDER,
+        name = "Strafe Intensity",
+        description = "How aggressively to strafe away from edges",
+        category = "Sumo Logic",
+        min = 1,
+        max = 10
+    )
+    var strafeIntensity = 5
+
+    @Property(
+        type = PropertyType.DECIMAL_SLIDER,
+        name = "Edge Threshold",
+        description = "Distance from edge to start avoiding",
+        category = "Sumo Logic",
+        minF = 1.0f,
+        maxF = 10.0f
+    )
+    var edgeThreshold = 3.0f
+
+    @Property(
+        type = PropertyType.DECIMAL_SLIDER,
+        name = "Aim Smooth Factor",
+        description = "Smoothing factor for natural aim easing",
+        category = "Sumo Logic",
+        minF = 0.1f,
+        maxF = 1.0f
+    )
+    var aimSmoothFactor = 0.6f
+
+    /*
+        Session Scheduler
+     */
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Session Scheduler",
+        description = "Automatically leave and rest after playing for some time",
+        category = "Session Scheduler"
+    )
+    var sessionEnabled = false
+
+    @Property(
+        type = PropertyType.NUMBER,
+        name = "Session Play Min (min)",
+        description = "Minimum play time in minutes",
+        category = "Session Scheduler",
+        min = 1,
+        max = 300,
+        increment = 10
+    )
+    var sessionPlayMin = 60
+
+    @Property(
+        type = PropertyType.NUMBER,
+        name = "Session Play Max (min)",
+        description = "Maximum play time in minutes",
+        category = "Session Scheduler",
+        min = 1,
+        max = 300,
+        increment = 10
+    )
+    var sessionPlayMax = 120
+
+    @Property(
+        type = PropertyType.NUMBER,
+        name = "Session Rest Min (min)",
+        description = "Minimum rest time in minutes",
+        category = "Session Scheduler",
+        min = 1,
+        max = 300,
+        increment = 10
+    )
+    var sessionRestMin = 30
+
+    @Property(
+        type = PropertyType.NUMBER,
+        name = "Session Rest Max (min)",
+        description = "Maximum rest time in minutes",
+        category = "Session Scheduler",
+        min = 1,
+        max = 300,
+        increment = 10
+    )
+    var sessionRestMax = 60
+
+    /*
         Auto GG
      */
 

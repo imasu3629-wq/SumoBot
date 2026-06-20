@@ -62,8 +62,10 @@ class Sumo : BotBase("/play duels_sumo_duel") {
         if (!tapping) {
             tapping = true
             val dur = if (tap50) 50 else 100
-            ChatUtils.info("W-Tap $dur")
-            Combat.wTap(dur)
+            val config = DuckDueller.config
+            if (config != null && best.spaghetcodes.duckdueller.utils.RandomUtils.randomIntInRange(0, 100) <= config.wTapFrequency) {
+                Combat.wTap(dur)
+            }
             tap50 = !tap50
             TimeUtils.setTimeout(fun () {
                 tapping = false
@@ -95,73 +97,54 @@ class Sumo : BotBase("/play duels_sumo_duel") {
     override fun onTick() {
         opponentOffEdge = opponent() != null && mc.thePlayer != null &&
                 (WorldUtils.entityOffEdge(opponent()!!) || opponentOffEdge && EntityUtils.getDistanceNoY(mc.thePlayer, opponent()!!) > 6)
+        
+        val config = DuckDueller.config
+
         if (!opponentOffEdge && mc.thePlayer != null && opponent() != null) {
             if (!mc.thePlayer.isSprinting) {
                 Movement.startSprinting()
             }
 
             Mouse.startTracking()
+            val distance = EntityUtils.getDistanceNoY(mc.thePlayer, opponent()!!)
 
-            val distance = EntityUtils.getDistanceNoY(mc.thePlayer, opponent())
-
-            if (distance > (DuckDueller.config?.maxDistanceAttack ?: 5)) {
-                Mouse.stopLeftAC()
+            // Burst Click and Hit Select integration
+            best.spaghetcodes.duckdueller.bot.player.HitSelector.onTick()
+            if (config != null && config.burstClickEnabled) {
+                Mouse.stopLeftAC() // Disable normal auto clicker
+                best.spaghetcodes.duckdueller.bot.player.BurstClickManager.onTick(opponent())
             } else {
-                Mouse.startLeftAC()
-            }
-
-            val movePriority = arrayListOf(0, 0)
-            var clear = false
-            var randomStrafe = false
-
-            if (distance > 3) {
-                val le = WorldUtils.distanceToLeftEdge(mc.thePlayer)
-                val re = WorldUtils.distanceToRightEdge(mc.thePlayer)
-                val diff = abs(abs(le) - abs(re))
-                if (diff > 1) {
-                    if (le < re) {
-                        movePriority[1] += 5
-                    } else if (re < le) {
-                        movePriority[0] += 5
-                    } else {
-                        randomStrafe = true
-                    }
+                if (distance > (config?.maxDistanceAttack ?: 5)) {
+                    Mouse.stopLeftAC()
                 } else {
-                    randomStrafe = true
+                    if (!best.spaghetcodes.duckdueller.bot.player.HitSelector.shouldBlockAttack()) {
+                        Mouse.startLeftAC()
+                    } else {
+                        Mouse.stopLeftAC()
+                    }
                 }
-            } else {
-                clear = true
             }
 
-            if (combo >= 2) {
-                clear = true
-            }
-
-            if (combo >= 3 && distance >= 3.2 && mc.thePlayer.onGround && !nearEdge(5f) && !WorldUtils.airInFront(mc.thePlayer, 3f)) {
-                Movement.singleJump(RandomUtils.randomIntInRange(100, 150))
-            }
-
-            if (clear) {
+            // Ring Positioning
+            val safeStrafe = best.spaghetcodes.duckdueller.bot.player.RingPositioning.calculateSafeStrafeVector(mc.thePlayer, opponent()!!)
+            if (safeStrafe[0] > 0 || safeStrafe[1] > 0) {
                 Combat.stopRandomStrafe()
-                Movement.clearLeftRight()
-            } else if (!tapping) {
-                if (randomStrafe) {
+                if (safeStrafe[0] > safeStrafe[1]) {
+                    Movement.stopRight()
+                    Movement.startLeft()
+                } else {
+                    Movement.stopLeft()
+                    Movement.startRight()
+                }
+            } else if (best.spaghetcodes.duckdueller.bot.player.RingPositioning.shouldDiagonalStrafe(mc.thePlayer, opponent()!!)) {
+                Combat.stopRandomStrafe()
+                best.spaghetcodes.duckdueller.bot.player.RingPositioning.applyDiagonalStrafe(mc.thePlayer, opponent()!!)
+            } else {
+                if (distance > 3) {
                     Combat.startRandomStrafe(900, 1400)
                 } else {
                     Combat.stopRandomStrafe()
-                    if (movePriority[0] > movePriority[1]) {
-                        Movement.stopRight()
-                        Movement.startLeft()
-                    } else if (movePriority[1] > movePriority[0]) {
-                        Movement.stopLeft()
-                        Movement.startRight()
-                    } else {
-                        if (RandomUtils.randomBool()) {
-                            Movement.startLeft()
-                        } else {
-                            Movement.startRight()
-                        }
-                    }
+                    Movement.clearLeftRight()
                 }
             }
 

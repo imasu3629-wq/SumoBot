@@ -157,9 +157,21 @@ object Mouse {
                     rotations[1] = splashAim.toFloat()
                 }
 
-                val lookRand = (DuckDueller.config?.lookRand ?: 0).toDouble()
-                var dyaw = ((rotations[0] - DuckDueller.mc.thePlayer.rotationYaw) + RandomUtils.randomDoubleInRange(-lookRand, lookRand)).toFloat()
-                var dpitch = ((rotations[1] - DuckDueller.mc.thePlayer.rotationPitch) + RandomUtils.randomDoubleInRange(-lookRand, lookRand)).toFloat()
+                val config = DuckDueller.config
+                val smoothFactor = config?.aimSmoothFactor?.toDouble() ?: 0.6
+                val lookRand = (config?.lookRand ?: 0.3f).toDouble()
+
+                val smoothed = best.spaghetcodes.duckdueller.bot.player.NaturalAim.smooth(
+                    DuckDueller.mc.thePlayer.rotationYaw,
+                    DuckDueller.mc.thePlayer.rotationPitch,
+                    rotations[0],
+                    rotations[1],
+                    smoothFactor,
+                    lookRand * 10.0
+                )
+
+                var dyaw = smoothed[0] - DuckDueller.mc.thePlayer.rotationYaw
+                var dpitch = smoothed[1] - DuckDueller.mc.thePlayer.rotationPitch
 
                 val factor = when (EntityUtils.getDistanceNoY(DuckDueller.mc.thePlayer, DuckDueller.bot?.opponent()!!)) {
                     in 0f..10f -> 1.0f
