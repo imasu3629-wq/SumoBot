@@ -28,6 +28,14 @@ object Mouse {
 
     private var splashAim = 0.0
 
+    // Reaction delay: timestamp (ms) before which aim should not yet react to a freshly acquired target.
+    private var reactionReadyAt = 0L
+
+    // Humanized clicking state
+    private var nextClickDelay = 0L
+    private var doubleClickPending = false
+
+
     fun leftClick() {
         if (DuckDueller.bot?.toggled() == true && DuckDueller.mc.thePlayer != null && !DuckDueller.mc.thePlayer.isUsingItem) {
             DuckDueller.mc.thePlayer.swingItem()
@@ -59,12 +67,26 @@ object Mouse {
     }
 
     fun startTracking() {
+        if (!tracking) {
+            // Only impose a reaction delay when we first START tracking a target.
+            // Once locked on, aim stays accurate - this just mimics human latency on acquisition.
+            val config = DuckDueller.config
+            if (config?.reactionDelayEnabled == true) {
+                val min = config.reactionDelayMin.coerceAtMost(config.reactionDelayMax)
+                val max = config.reactionDelayMax.coerceAtLeast(config.reactionDelayMin)
+                reactionReadyAt = System.currentTimeMillis() + RandomUtils.randomIntInRange(min, max)
+            } else {
+                reactionReadyAt = 0L
+            }
+        }
         tracking = true
     }
 
     fun stopTracking() {
         tracking = false
+        best.spaghetcodes.duckdueller.bot.player.NaturalAim.reset()
     }
+
 
     fun setUsingProjectile(proj: Boolean) {
         _usingProjectile = proj
@@ -97,16 +119,68 @@ object Mouse {
     private fun leftACFunc() {
         if (DuckDueller.bot?.toggled() == true && leftAC) {
             if (!DuckDueller.mc.thePlayer.isUsingItem) {
-                val minCPS = DuckDueller.config?.minCPS ?: 10
-                val maxCPS = DuckDueller.config?.maxCPS ?: 14
+                val config = DuckDueller.config
+                val minCPS = config?.minCPS ?: 10
+                val maxCPS = config?.maxCPS ?: 14
+                val humanized = config?.humanizedClicks ?: true
 
-                if (System.currentTimeMillis() >= lastLeftClick + (1000 / RandomUtils.randomIntInRange(minCPS, maxCPS))) {
+                val now = System.currentTimeMillis()
+
+                if (!humanized) {
+                    // Original uniform behaviour
+                    if (now >= lastLeftClick + (1000 / RandomUtils.randomIntInRange(minCPS, maxCPS))) {
+                        leftClick()
+                        lastLeftClick = now
+                    }
+                    return
+                }
+
+                // Humanized: gaussian inter-click interval so the rhythm clusters
+                // around a comfortable CPS with natural variation, plus rare misses
+                // and rare double-clicks. Net click rate stays in the configured band.
+                if (now >= lastLeftClick + nextClickDelay) {
+                    val missChance = (config?.clickMissChance ?: 0) / 100.0
+
+                    if (doubleClickPending) {
+                        // Quick follow-up click of a human "double tap"
+                        leftClick()
+                        doubleClickPending = false
+                        lastLeftClick = now
+                        nextClickDelay = RandomUtils.randomGaussianIntInRange(
+                            1000 / maxCPS,
+                            1000 / minCPS
+                        ).toLong()
+                        return
+                    }
+
+                    if (RandomUtils.chance(missChance)) {
+                        // Drop this click (human inconsistency) but don't stall too long.
+                        lastLeftClick = now
+                        nextClickDelay = RandomUtils.randomGaussianIntInRange(
+                            1000 / maxCPS,
+                            1000 / minCPS
+                        ).toLong()
+                        return
+                    }
+
                     leftClick()
-                    lastLeftClick = System.currentTimeMillis()
+                    lastLeftClick = now
+
+                    // Occasionally queue a fast second click (burst), otherwise normal gaussian gap.
+                    if (RandomUtils.chance(0.08)) {
+                        doubleClickPending = true
+                        nextClickDelay = RandomUtils.randomIntInRange(40, 70).toLong()
+                    } else {
+                        nextClickDelay = RandomUtils.randomGaussianIntInRange(
+                            1000 / maxCPS,
+                            1000 / minCPS
+                        ).toLong()
+                    }
                 }
             }
         }
     }
+
 
     private fun rClickDown() {
         if (DuckDueller.bot?.toggled() == true) {
@@ -136,10 +210,17 @@ object Mouse {
             }
         }
         if (DuckDueller.mc.thePlayer != null && DuckDueller.bot?.toggled() == true && tracking && DuckDueller.bot?.opponent() != null) {
+            // Reaction delay: hold off on reacting to a freshly acquired target for a human-like moment.
+            // This does not lower accuracy once we start tracking, it just delays the initial reaction.
+            if (System.currentTimeMillis() < reactionReadyAt) {
+                return
+            }
+
             if (_runningAway) {
                 _usingProjectile = false
             }
             var rotations = EntityUtils.getRotations(DuckDueller.mc.thePlayer, DuckDueller.bot?.opponent(), false)
+
 
             if (rotations != null) {
                 if (_runningAway) {
@@ -160,15 +241,30 @@ object Mouse {
                 val config = DuckDueller.config
                 val smoothFactor = config?.aimSmoothFactor?.toDouble() ?: 0.6
                 val lookRand = (config?.lookRand ?: 0.3f).toDouble()
+                val humanizedAim = config?.humanizedAim ?: true
 
-                val smoothed = best.spaghetcodes.duckdueller.bot.player.NaturalAim.smooth(
-                    DuckDueller.mc.thePlayer.rotationYaw,
-                    DuckDueller.mc.thePlayer.rotationPitch,
-                    rotations[0],
-                    rotations[1],
-                    smoothFactor,
-                    lookRand * 10.0
-                )
+                val smoothed = if (humanizedAim) {
+                    val overshoot = (config?.aimOvershootChance ?: 0) / 100.0
+                    best.spaghetcodes.duckdueller.bot.player.NaturalAim.humanize(
+                        DuckDueller.mc.thePlayer.rotationYaw,
+                        DuckDueller.mc.thePlayer.rotationPitch,
+                        rotations[0],
+                        rotations[1],
+                        smoothFactor,
+                        lookRand * 10.0,
+                        overshoot
+                    )
+                } else {
+                    best.spaghetcodes.duckdueller.bot.player.NaturalAim.smooth(
+                        DuckDueller.mc.thePlayer.rotationYaw,
+                        DuckDueller.mc.thePlayer.rotationPitch,
+                        rotations[0],
+                        rotations[1],
+                        smoothFactor,
+                        lookRand * 10.0
+                    )
+                }
+
 
                 var dyaw = smoothed[0] - DuckDueller.mc.thePlayer.rotationYaw
                 var dpitch = smoothed[1] - DuckDueller.mc.thePlayer.rotationPitch

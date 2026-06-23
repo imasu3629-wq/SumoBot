@@ -230,8 +230,123 @@ class Config : Vigilant(File(DuckDueller.configLocation), sortingBehavior = Conf
     var aimSmoothFactor = 0.6f
 
     /*
+        Humanizer
+     */
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Humanized Aim",
+        description = "Use momentum-based aim that accelerates and decelerates like a real hand instead of moving at a constant speed.",
+        category = "Humanizer"
+    )
+    var humanizedAim = true
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Reaction Delay",
+        description = "Adds a small human-like reaction delay before the aim follows the opponent. Does NOT reduce accuracy, only adds realistic latency.",
+        category = "Humanizer"
+    )
+    var reactionDelayEnabled = true
+
+    @Property(
+        type = PropertyType.NUMBER,
+        name = "Reaction Delay Min (ms)",
+        description = "Minimum reaction delay in milliseconds.",
+        category = "Humanizer",
+        min = 0,
+        max = 400,
+        increment = 10
+    )
+    var reactionDelayMin = 80
+
+    @Property(
+        type = PropertyType.NUMBER,
+        name = "Reaction Delay Max (ms)",
+        description = "Maximum reaction delay in milliseconds.",
+        category = "Humanizer",
+        min = 0,
+        max = 400,
+        increment = 10
+    )
+    var reactionDelayMax = 180
+
+    @Property(
+        type = PropertyType.SLIDER,
+        name = "Aim Overshoot Chance",
+        description = "Chance (%) to slightly overshoot a large flick and correct back, like a human. 0 = never.",
+        category = "Humanizer",
+        min = 0,
+        max = 40
+    )
+    var aimOvershootChance = 12
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Humanized Clicks",
+        description = "Use a natural (gaussian) click rhythm with occasional missed/double clicks instead of perfectly even clicking.",
+        category = "Humanizer"
+    )
+    var humanizedClicks = true
+
+    @Property(
+        type = PropertyType.SLIDER,
+        name = "Click Miss Chance",
+        description = "Chance (%) to occasionally drop a click to mimic human inconsistency. Keep low to stay strong.",
+        category = "Humanizer",
+        min = 0,
+        max = 15
+    )
+    var clickMissChance = 4
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Humanized Movement",
+        description = "Randomize W-tap timing and add tiny delays to strafe/edge reactions so key presses look human.",
+        category = "Humanizer"
+    )
+    var humanizedMovement = true
+
+    /*
+        Packet Optimization
+     */
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Packet Optimization",
+        description = "Master switch for packet send optimizations (reduces redundant packets for smoother, lower-bandwidth play).",
+        category = "Packets"
+    )
+    var packetOptimization = false
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Remove Redundant Rotations",
+        description = "Skip sending look packets when your rotation has not meaningfully changed.",
+        category = "Packets"
+    )
+    var packetRemoveRedundantRotations = true
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Remove Duplicate Position",
+        description = "Skip sending position packets when you have not moved (Minecraft normally sends idle keep-alive position packets).",
+        category = "Packets"
+    )
+    var packetRemoveDuplicatePosition = false
+
+    @Property(
+        type = PropertyType.SWITCH,
+        name = "Batch Swing Packets",
+        description = "Avoid sending more than one arm-swing packet per tick.",
+        category = "Packets"
+    )
+    var packetBatchSwings = true
+
+    /*
         Session Scheduler
      */
+
 
     @Property(
         type = PropertyType.SWITCH,
@@ -519,7 +634,17 @@ class Config : Vigilant(File(DuckDueller.configLocation), sortingBehavior = Conf
         addDependency("startMessage", "sendStartMessage")
         addDependency("startMessageDelay", "sendStartMessage")
 
+        addDependency("reactionDelayMin", "reactionDelayEnabled")
+        addDependency("reactionDelayMax", "reactionDelayEnabled")
+        addDependency("aimOvershootChance", "humanizedAim")
+        addDependency("clickMissChance", "humanizedClicks")
+
+        addDependency("packetRemoveRedundantRotations", "packetOptimization")
+        addDependency("packetRemoveDuplicatePosition", "packetOptimization")
+        addDependency("packetBatchSwings", "packetOptimization")
+
         addDependency("dodgeWins", "enableDodging")
+
         addDependency("dodgeWS", "enableDodging")
         addDependency("dodgeWLR", "enableDodging")
         addDependency("dodgeLostTo", "enableDodging")

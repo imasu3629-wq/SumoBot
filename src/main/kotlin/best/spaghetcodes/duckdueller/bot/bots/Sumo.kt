@@ -61,9 +61,18 @@ class Sumo : BotBase("/play duels_sumo_duel") {
     override fun onAttack() {
         if (!tapping) {
             tapping = true
-            val dur = if (tap50) 50 else 100
             val config = DuckDueller.config
-            if (config != null && best.spaghetcodes.duckdueller.utils.RandomUtils.randomIntInRange(0, 100) <= config.wTapFrequency) {
+            val humanized = config?.humanizedMovement ?: true
+
+            // W-tap duration: humanized uses a natural spread around the two "feel" values
+            // instead of a perfectly alternating 50/100ms toggle that looks robotic.
+            val dur = if (humanized) {
+                if (tap50) RandomUtils.randomIntInRange(40, 70) else RandomUtils.randomIntInRange(85, 125)
+            } else {
+                if (tap50) 50 else 100
+            }
+
+            if (config != null && RandomUtils.randomIntInRange(0, 100) <= config.wTapFrequency) {
                 Combat.wTap(dur)
             }
             tap50 = !tap50
@@ -72,6 +81,7 @@ class Sumo : BotBase("/play duels_sumo_duel") {
             }, dur)
         }
     }
+
 
     override fun onFoundOpponent() {
         Mouse.startTracking()
